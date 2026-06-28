@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import { taskAPI } from "../services/api";
 
-const TaskContext = createContext();
+export const TaskContext = createContext();
 
 export const TaskProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]);
