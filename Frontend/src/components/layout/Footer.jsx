@@ -1,7 +1,11 @@
-const Footer = () => (
-  <footer className="border-t border-gray-200 bg-white py-4 px-6 text-center text-sm text-gray-400">
-    © {new Date().getFullYear()} TaskTracker — Built with MERN Stack
-  </footer>
-);
-
-export default Footer;
+export default function Footer() {
+  return (
+    <footer style={{
+      borderTop: "1px solid var(--border-subtle)",
+      padding: "20px 32px", textAlign: "center",
+      fontSize: "13px", color: "var(--text-muted)",
+    }}>
+      © {new Date().getFullYear()} TaskTracker — Built with MERN Stack
+    </footer>
+  );
+}

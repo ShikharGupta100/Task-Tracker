@@ -1,37 +1,43 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { TaskContext } from "../../context/TaskContext";
 
-const icons = {
-  success: (
-    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-    </svg>
-  ),
-  error: (
-    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  ),
-};
-
-const Toast = ({ message, type = "success" }) => {
+export default function Toast() {
+  const { toast } = useContext(TaskContext);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    setVisible(true);
-    return () => setVisible(false);
-  }, []);
+    if (toast) {
+      setVisible(true);
+      const t = setTimeout(() => setVisible(false), 2800);
+      return () => clearTimeout(t);
+    }
+  }, [toast]);
+
+  if (!toast || !visible) return null;
+  const isSuccess = toast.type === "success";
 
   return (
-    <div className={`
-      fixed bottom-6 right-6 z-50 flex items-center gap-3
-      bg-white border border-gray-200 shadow-lg rounded-xl px-4 py-3
-      transition-all duration-300
-      ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}
-    `}>
-      {icons[type]}
-      <p className="text-sm font-medium text-gray-800">{message}</p>
+    <div style={{
+      position: "fixed", bottom: "28px", right: "28px", zIndex: 200,
+      background: "var(--bg-card)",
+      border: `1px solid ${isSuccess ? "rgba(52,211,153,0.35)" : "rgba(248,113,113,0.35)"}`,
+      borderRadius: "12px", padding: "14px 18px",
+      display: "flex", alignItems: "center", gap: "12px",
+      boxShadow: "0 16px 48px rgba(0,0,0,0.4)",
+      minWidth: "260px", animation: "slideUp 0.3s ease",
+    }}>
+      <div style={{
+        width: "32px", height: "32px", borderRadius: "8px", flexShrink: 0,
+        background: isSuccess ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        {isSuccess
+          ? <svg width="16" height="16" fill="none" stroke="#34d399" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          : <svg width="16" height="16" fill="none" stroke="#f87171" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        }
+      </div>
+      <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--text-primary)" }}>{toast.message}</span>
+      <style>{`@keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
     </div>
   );
-};
-
-export default Toast;
+}

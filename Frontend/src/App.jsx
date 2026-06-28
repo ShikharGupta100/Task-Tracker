@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { TaskProvider, useTaskContext } from "./context/TaskContext";
+import { TaskProvider } from "./context/TaskContext";
 import Navbar from "./components/layout/Navbar";
 import Sidebar from "./components/layout/Sidebar";
 import Footer from "./components/layout/Footer";
@@ -12,30 +12,17 @@ import EditTask from "./pages/EditTask";
 import TaskDetail from "./pages/TaskDetail";
 import NotFound from "./pages/NotFound";
 
-const Layout = ({ children }) => {
+function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { toast } = useTaskContext();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar onMenuClick={() => setSidebarOpen(true)} />
-      <div className="flex flex-1">
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg-primary)" }}>
+      <div className="sidebar-wrapper">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className="flex-1 p-4 md:p-6 min-w-0">
-          {children}
-        </main>
       </div>
-      <Footer />
-      {toast && <Toast message={toast.message} type={toast.type} />}
-    </div>
-  );
-};
-
-const App = () => {
-  return (
-    <BrowserRouter>
-      <TaskProvider>
-        <Layout>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        <Navbar onMenuToggle={() => setSidebarOpen(o => !o)} />
+        <main style={{ flex: 1 }}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/tasks" element={<AllTasks />} />
@@ -44,10 +31,26 @@ const App = () => {
             <Route path="/tasks/:id" element={<TaskDetail />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </Layout>
+        </main>
+        <Footer />
+      </div>
+      <Toast />
+      <style>{`
+        @media (max-width: 768px) {
+          .sidebar-wrapper { display: none; }
+          .mobile-menu-btn { display: flex !important; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <TaskProvider>
+        <Layout />
       </TaskProvider>
     </BrowserRouter>
   );
-};
-
-export default App;
+}

@@ -2,88 +2,81 @@ import { NavLink } from "react-router-dom";
 
 const navItems = [
   {
-    to: "/",
-    label: "Dashboard",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    ),
+    to: "/", label: "Dashboard",
+    icon: <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
   },
   {
-    to: "/tasks",
-    label: "All Tasks",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-      </svg>
-    ),
+    to: "/tasks", label: "All Tasks",
+    icon: <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
   },
   {
-    to: "/add",
-    label: "Add Task",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-      </svg>
-    ),
+    to: "/add", label: "Add Task",
+    icon: <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
   },
 ];
 
-const Sidebar = ({ isOpen, onClose }) => {
+export default function Sidebar({ isOpen, onClose }) {
   return (
-    <>
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-30 md:hidden"
-          onClick={onClose}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside className={`
-        fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-40
-        transform transition-transform duration-300 ease-in-out
-        md:translate-x-0 md:static md:block
-        ${isOpen ? "translate-x-0" : "-translate-x-full"}
-      `}>
-        {/* Logo in sidebar (mobile) */}
-        <div className="flex items-center gap-2 px-6 h-16 border-b border-gray-200 md:hidden">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+    <aside style={{
+      width: "220px", background: "var(--bg-secondary)",
+      borderRight: "1px solid var(--border-subtle)",
+      height: "100vh", position: "sticky", top: 0,
+      display: "flex", flexDirection: "column",
+      padding: "24px 16px", gap: "4px", flexShrink: 0,
+    }}>
+      <div style={{ marginBottom: "32px", padding: "0 8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{
+            width: "38px", height: "38px", borderRadius: "10px",
+            background: "linear-gradient(135deg, #7c3aed, #4f46e5)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg width="20" height="20" fill="white" viewBox="0 0 24 24">
+              <path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
             </svg>
           </div>
-          <span className="font-bold text-gray-800 text-lg">TaskTracker</span>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "15px", color: "var(--text-primary)" }}>TaskTracker</div>
+            <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>Premium task management</div>
+          </div>
         </div>
+      </div>
 
-        <nav className="p-4 mt-4 space-y-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === "/"}
-              onClick={onClose}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
-                ${isActive
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
-                }`
-              }
-            >
-              {item.icon}
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-      </aside>
-    </>
+      <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        {navItems.map(item => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === "/"}
+            onClick={onClose}
+            style={({ isActive }) => ({
+              display: "flex", alignItems: "center", gap: "10px",
+              padding: "10px 12px", borderRadius: "10px",
+              textDecoration: "none", fontSize: "14px", fontWeight: 500,
+              transition: "all 0.15s",
+              background: isActive ? "linear-gradient(135deg, rgba(124,58,237,0.25), rgba(79,70,229,0.2))" : "transparent",
+              color: isActive ? "#a78bfa" : "var(--text-secondary)",
+              border: isActive ? "1px solid rgba(124,58,237,0.3)" : "1px solid transparent",
+            })}
+          >
+            {item.icon}
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
+
+      <div style={{ marginTop: "auto" }}>
+        <div style={{
+          background: "linear-gradient(135deg, rgba(124,58,237,0.15), rgba(79,70,229,0.1))",
+          border: "1px solid rgba(124,58,237,0.2)", borderRadius: "12px", padding: "16px",
+        }}>
+          <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>Team productivity</div>
+          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "10px" }}>92% completion this week</div>
+          <div style={{ background: "var(--border)", borderRadius: "4px", height: "4px" }}>
+            <div style={{ width: "92%", height: "100%", borderRadius: "4px", background: "linear-gradient(90deg, #7c3aed, #8b5cf6)" }}/>
+          </div>
+        </div>
+      </div>
+    </aside>
   );
-};
-
-export default Sidebar;
+}

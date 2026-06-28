@@ -1,86 +1,90 @@
-import { Link } from "react-router-dom";
-import { useState } from "react";
-import Badge from "../ui/Badge";
-import Button from "../ui/Button";
+import { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { TaskContext } from "../../context/TaskContext";
 import ConfirmModal from "../ui/ConfirmModal";
-import { useTaskContext } from "../../context/TaskContext";
-import { STATUS_COLORS, PRIORITY_COLORS, formatDate, isOverdue } from "../../utils/helpers";
+import { formatDate, isOverdue } from "../../utils/helpers";
 
-const TaskCard = ({ task }) => {
-  const { deleteTask } = useTaskContext();
+const statusClass = { "Pending": "status-pending", "In Progress": "status-inprogress", "Completed": "status-completed" };
+const priorityClass = { "Low": "priority-low", "Medium": "priority-medium", "High": "priority-high" };
+
+export default function TaskCard({ task }) {
+  const { deleteTask } = useContext(TaskContext);
+  const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const overdue = isOverdue(task.dueDate, task.status);
-
-  const handleDelete = async () => {
-    setDeleting(true);
-    try {
-      await deleteTask(task._id);
-    } finally {
-      setDeleting(false);
-      setShowModal(false);
-    }
-  };
+  const [hovered, setHovered] = useState(false);
+  const overdue = isOverdue(task.dueDate) && task.status !== "Completed";
 
   return (
     <>
-      <div className={`bg-white rounded-xl border p-5 hover:shadow-md transition-all duration-200 flex flex-col gap-3
-        ${overdue ? "border-red-200" : "border-gray-200"}`}>
-
-        {/* Top row: badges */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <Badge label={task.status} {...STATUS_COLORS[task.status]} />
-          <Badge label={task.priority} {...PRIORITY_COLORS[task.priority]} />
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          background: hovered ? "var(--bg-card-hover)" : "var(--bg-card)",
+          border: `1px solid ${overdue ? "rgba(248,113,113,0.35)" : hovered ? "rgba(124,58,237,0.3)" : "var(--border)"}`,
+          borderRadius: "14px", padding: "20px",
+          display: "flex", flexDirection: "column", gap: "12px",
+          transition: "all 0.2s",
+          boxShadow: hovered ? "0 8px 32px rgba(0,0,0,0.3)" : "0 2px 8px rgba(0,0,0,0.2)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span className={statusClass[task.status]} style={{ fontSize: "12px", fontWeight: 600, padding: "4px 10px", borderRadius: "6px" }}>
+            {task.status}
+          </span>
+          <span className={priorityClass[task.priority]} style={{ fontSize: "12px", fontWeight: 600, padding: "4px 10px", borderRadius: "6px" }}>
+            {task.priority}
+          </span>
         </div>
 
-        {/* Title */}
-        <Link to={`/tasks/${task._id}`}>
-          <h3 className="font-semibold text-gray-800 hover:text-indigo-600 transition-colors line-clamp-1">
-            {task.title}
-          </h3>
-        </Link>
+        <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.3 }}>
+          {task.title}
+        </h3>
 
-        {/* Description */}
-        <p className="text-gray-500 text-sm line-clamp-2">{task.description}</p>
+        <p style={{
+          margin: 0, fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.6,
+          display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+        }}>
+          {task.description}
+        </p>
 
-        {/* Due date */}
-        <div className={`flex items-center gap-1.5 text-xs font-medium
-          ${overdue ? "text-red-500" : "text-gray-400"}`}>
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          {overdue ? "Overdue · " : "Due · "}
-          {formatDate(task.dueDate)}
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2 pt-1 border-t border-gray-100">
-          <Link to={`/tasks/${task._id}`} className="flex-1">
-            <Button variant="outline" size="sm" className="w-full">View</Button>
-          </Link>
-          <Link to={`/edit/${task._id}`} className="flex-1">
-            <Button variant="secondary" size="sm" className="w-full">Edit</Button>
-          </Link>
-          <Button variant="danger" size="sm" onClick={() => setShowModal(true)}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        {task.dueDate && (
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <svg width="14" height="14" fill="none" stroke={overdue ? "#f87171" : "var(--text-muted)"} strokeWidth="1.8" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
             </svg>
-          </Button>
+            <span style={{ fontSize: "12px", color: overdue ? "#f87171" : "var(--text-muted)", fontWeight: 500 }}>
+              Due {formatDate(task.dueDate)}{overdue ? " · Overdue" : ""}
+            </span>
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+          <button onClick={() => navigate(`/tasks/${task._id}`)} style={{
+            flex: 1, padding: "8px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
+            background: "transparent", border: "1px solid var(--border)",
+            color: "var(--text-secondary)", cursor: "pointer",
+          }}>View</button>
+          <button onClick={() => navigate(`/edit/${task._id}`)} style={{
+            flex: 1, padding: "8px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
+            background: "transparent", border: "1px solid var(--border)",
+            color: "var(--text-secondary)", cursor: "pointer",
+          }}>Edit</button>
+          <button onClick={() => setShowModal(true)} style={{
+            padding: "8px 14px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
+            background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.3)",
+            color: "#f87171", cursor: "pointer",
+          }}>Delete</button>
         </div>
       </div>
 
       <ConfirmModal
         isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onConfirm={() => { deleteTask(task._id); setShowModal(false); }}
         title="Delete Task"
-        message={`Are you sure you want to delete "${task.title}"? This cannot be undone.`}
-        onConfirm={handleDelete}
-        onCancel={() => setShowModal(false)}
-        loading={deleting}
+        message={`Delete "${task.title}"? This cannot be undone.`}
       />
     </>
   );
-};
-
-export default TaskCard;
+}

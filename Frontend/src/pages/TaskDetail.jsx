@@ -1,108 +1,78 @@
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { TaskContext } from "../context/TaskContext";
 import { useSingleTask } from "../hooks/useTasks";
-import { useTaskContext } from "../context/TaskContext";
-import Badge from "../components/ui/Badge";
-import Button from "../components/ui/Button";
-import Loader from "../components/ui/Loader";
 import ConfirmModal from "../components/ui/ConfirmModal";
-import { STATUS_COLORS, PRIORITY_COLORS, formatDate, isOverdue } from "../utils/helpers";
+import Loader from "../components/ui/Loader";
+import { formatDate, isOverdue } from "../utils/helpers";
 
-const TaskDetail = () => {
+const statusClass = { "Pending": "status-pending", "In Progress": "status-inprogress", "Completed": "status-completed" };
+const priorityClass = { "Low": "priority-low", "Medium": "priority-medium", "High": "priority-high" };
+
+export default function TaskDetail() {
   const { id } = useParams();
+  const { deleteTask } = useContext(TaskContext);
   const navigate = useNavigate();
-  const { task, loading, error } = useSingleTask(id);
-  const { deleteTask } = useTaskContext();
+  const { task, loading } = useSingleTask(id);
   const [showModal, setShowModal] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  const handleDelete = async () => {
-    setDeleting(true);
-    try {
-      await deleteTask(id);
-      navigate("/tasks");
-    } finally {
-      setDeleting(false);
-    }
-  };
 
   if (loading) return <Loader text="Loading task..." />;
-  if (error) return <div className="text-red-500 text-sm p-4 bg-red-50 rounded-lg">{error}</div>;
-  if (!task) return null;
+  if (!task) return (
+    <div style={{ padding: "32px", textAlign: "center" }}>
+      <p style={{ color: "var(--text-muted)" }}>Task not found.</p>
+      <button onClick={() => navigate("/tasks")} style={{ color: "#a78bfa", background: "none", border: "none", cursor: "pointer" }}>← Back</button>
+    </div>
+  );
 
-  const overdue = isOverdue(task.dueDate, task.status);
+  const overdue = isOverdue(task.dueDate) && task.status !== "Completed";
 
   return (
     <>
-      <div className="max-w-2xl mx-auto space-y-5">
-        {/* Back */}
-        <Link to="/tasks" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Tasks
-        </Link>
+      <div style={{ padding: "32px", maxWidth: "720px" }}>
+        <button onClick={() => navigate("/tasks")} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "14px", marginBottom: "24px", padding: 0 }}>
+          ← Back to tasks
+        </button>
 
-        {/* Card */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
-          {/* Badges */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge label={task.status} {...STATUS_COLORS[task.status]} />
-            <Badge label={task.priority} {...PRIORITY_COLORS[task.priority]} />
-            {overdue && (
-              <span className="text-xs font-semibold text-red-600 bg-red-50 px-2.5 py-1 rounded-full">
-                Overdue
-              </span>
-            )}
+        <div style={{ background: "var(--bg-card)", border: `1px solid ${overdue ? "rgba(248,113,113,0.35)" : "var(--border)"}`, borderRadius: "16px", padding: "32px" }}>
+          <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+            <span className={statusClass[task.status]} style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "6px" }}>{task.status}</span>
+            <span className={priorityClass[task.priority]} style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "6px" }}>{task.priority}</span>
+            {overdue && <span style={{ fontSize: "12px", fontWeight: 600, padding: "5px 12px", borderRadius: "6px", color: "#f87171", background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.25)" }}>Overdue</span>}
           </div>
 
-          {/* Title */}
-          <h1 className="text-2xl font-bold text-gray-800">{task.title}</h1>
+          <h1 style={{ margin: "0 0 16px", fontSize: "24px", fontWeight: 800, color: "var(--text-primary)" }}>{task.title}</h1>
+          <p style={{ margin: "0 0 28px", fontSize: "15px", color: "var(--text-secondary)", lineHeight: 1.7 }}>{task.description}</p>
 
-          {/* Description */}
-          <div>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Description</p>
-            <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">{task.description}</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "32px" }}>
+            {[
+              { label: "Due Date", value: task.dueDate ? formatDate(task.dueDate) : "—" },
+              { label: "Created", value: formatDate(task.createdAt) },
+              { label: "Last Updated", value: formatDate(task.updatedAt) },
+            ].map(({ label, value }) => (
+              <div key={label} style={{ background: "var(--bg-secondary)", borderRadius: "10px", padding: "14px 16px" }}>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>{label}</div>
+                <div style={{ fontSize: "14px", color: "var(--text-primary)", fontWeight: 600 }}>{value}</div>
+              </div>
+            ))}
           </div>
 
-          {/* Meta */}
-          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
-            <div>
-              <p className="text-xs text-gray-400 mb-1">Due Date</p>
-              <p className={`text-sm font-medium ${overdue ? "text-red-500" : "text-gray-700"}`}>
-                {formatDate(task.dueDate)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 mb-1">Created</p>
-              <p className="text-sm font-medium text-gray-700">{formatDate(task.createdAt)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 mb-1">Last Updated</p>
-              <p className="text-sm font-medium text-gray-700">{formatDate(task.updatedAt)}</p>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <Link to={`/edit/${task._id}`} className="flex-1">
-              <Button variant="outline" className="w-full">Edit Task</Button>
-            </Link>
-            <Button variant="danger" onClick={() => setShowModal(true)}>Delete</Button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button onClick={() => navigate(`/edit/${task._id}`)} style={{
+              flex: 1, padding: "12px", borderRadius: "10px", fontSize: "14px", fontWeight: 700,
+              background: "linear-gradient(135deg, #7c3aed, #4f46e5)", border: "none", color: "white", cursor: "pointer",
+            }}>Edit Task</button>
+            <button onClick={() => setShowModal(true)} style={{
+              padding: "12px 20px", borderRadius: "10px", fontSize: "14px", fontWeight: 700,
+              background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.3)", color: "#f87171", cursor: "pointer",
+            }}>Delete</button>
           </div>
         </div>
       </div>
 
-      <ConfirmModal
-        isOpen={showModal}
-        title="Delete Task"
-        message={`Are you sure you want to delete "${task.title}"?`}
-        onConfirm={handleDelete}
-        onCancel={() => setShowModal(false)}
-        loading={deleting}
+      <ConfirmModal isOpen={showModal} onClose={() => setShowModal(false)}
+        onConfirm={async () => { await deleteTask(task._id); navigate("/tasks"); }}
+        title="Delete Task" message={`Delete "${task.title}"? This cannot be undone.`}
       />
     </>
   );
-};
-
-export default TaskDetail;
+}

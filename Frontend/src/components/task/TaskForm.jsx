@@ -1,162 +1,149 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTaskContext } from "../../context/TaskContext";
-import Button from "../ui/Button";
+import { TaskContext } from "../../context/TaskContext";
 import { getTodayString } from "../../utils/helpers";
 
-const initialState = {
-  title: "",
-  description: "",
-  status: "Pending",
-  priority: "Medium",
-  dueDate: "",
+const inputStyle = {
+  width: "100%", padding: "12px 14px",
+  background: "var(--bg-secondary)", border: "1px solid var(--border)",
+  borderRadius: "10px", color: "var(--text-primary)", fontSize: "14px",
+  outline: "none", boxSizing: "border-box", transition: "border-color 0.15s",
 };
 
-const TaskForm = ({ existing }) => {
+export default function TaskForm({ existing }) {
+  const { createTask, updateTask } = useContext(TaskContext);
   const navigate = useNavigate();
-  const { createTask, updateTask } = useTaskContext();
-  const [form, setForm] = useState(existing || initialState);
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    title: existing?.title || "",
+    description: existing?.description || "",
+    status: existing?.status || "Pending",
+    priority: existing?.priority || "Medium",
+    dueDate: existing?.dueDate ? existing.dueDate.split("T")[0] : "",
+  });
 
   const validate = () => {
     const e = {};
-    if (!form.title.trim()) e.title = "Title is required";
-    else if (form.title.trim().length < 3) e.title = "Title must be at least 3 characters";
-    else if (form.title.trim().length > 100) e.title = "Title cannot exceed 100 characters";
-
-    if (!form.description.trim()) e.description = "Description is required";
-    else if (form.description.trim().length < 10) e.description = "Description must be at least 10 characters";
-    else if (form.description.trim().length > 500) e.description = "Description cannot exceed 500 characters";
-
+    if (!form.title.trim() || form.title.length < 3) e.title = "Title must be at least 3 characters";
+    if (form.title.length > 100) e.title = "Title must be under 100 characters";
+    if (!form.description.trim() || form.description.length < 10) e.description = "Description must be at least 10 characters";
+    if (form.description.length > 500) e.description = "Description must be under 500 characters";
     if (!form.dueDate) e.dueDate = "Due date is required";
-    else if (new Date(form.dueDate) < new Date(getTodayString())) e.dueDate = "Due date cannot be in the past";
-
     return e;
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    // Clear error on change
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-    setSubmitting(true);
+  const handleSubmit = async () => {
+    const e = validate();
+    if (Object.keys(e).length) { setErrors(e); return; }
+    setLoading(true);
     try {
-      if (existing) {
-        await updateTask(existing._id, form);
-      } else {
-        await createTask(form);
-      }
+      if (existing) await updateTask(existing._id, form);
+      else await createTask(form);
       navigate("/tasks");
-    } catch (err) {
-      setErrors({ submit: err.message });
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
-
-  const inputClass = (field) =>
-    `w-full px-4 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors
-    ${errors[field] ? "border-red-400 bg-red-50" : "border-gray-300 bg-white hover:border-gray-400"}`;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {errors.submit && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
-          {errors.submit}
-        </div>
-      )}
-
-      {/* Title */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Title <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          name="title"
-          value={form.title}
-          onChange={handleChange}
-          placeholder="e.g. Design landing page"
-          className={inputClass("title")}
-        />
-        {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
-        <p className="text-gray-400 text-xs mt-1">{form.title.length}/100</p>
+    <div style={{ padding: "32px", maxWidth: "680px" }}>
+      <div style={{ marginBottom: "32px" }}>
+        <h1 style={{ margin: 0, fontSize: "26px", fontWeight: 800, color: "var(--text-primary)" }}>
+          {existing ? "Edit Task" : "Add New Task"}
+        </h1>
+        <p style={{ margin: "6px 0 0", color: "var(--text-muted)", fontSize: "14px" }}>
+          {existing ? "Update the task details below." : "Fill in the details to create a new task."}
+        </p>
       </div>
 
-      {/* Description */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Description <span className="text-red-500">*</span>
-        </label>
-        <textarea
-          name="description"
-          value={form.description}
-          onChange={handleChange}
-          rows={4}
-          placeholder="Describe what needs to be done..."
-          className={inputClass("description")}
-        />
-        {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
-        <p className="text-gray-400 text-xs mt-1">{form.description.length}/500</p>
-      </div>
+      <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "16px", padding: "28px", display: "flex", flexDirection: "column", gap: "20px" }}>
 
-      {/* Status + Priority */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
-          <select name="status" value={form.status} onChange={handleChange} className={inputClass("status")}>
-            <option>Pending</option>
-            <option>In Progress</option>
-            <option>Completed</option>
-          </select>
+          <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>
+            Title <span style={{ color: "#f87171" }}>*</span>
+          </label>
+          <input
+            value={form.title}
+            onChange={e => setForm({ ...form, title: e.target.value })}
+            placeholder="Enter task title..."
+            maxLength={100}
+            style={{ ...inputStyle, borderColor: errors.title ? "#f87171" : "var(--border)" }}
+            onFocus={e => e.target.style.borderColor = "#7c3aed"}
+            onBlur={e => e.target.style.borderColor = errors.title ? "#f87171" : "var(--border)"}
+          />
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px" }}>
+            {errors.title && <p style={{ margin: 0, fontSize: "12px", color: "#f87171" }}>{errors.title}</p>}
+            <span style={{ marginLeft: "auto", fontSize: "11px", color: "var(--text-muted)" }}>{form.title.length}/100</span>
+          </div>
         </div>
+
+        {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Priority</label>
-          <select name="priority" value={form.priority} onChange={handleChange} className={inputClass("priority")}>
-            <option>Low</option>
-            <option>Medium</option>
-            <option>High</option>
-          </select>
+          <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>
+            Description <span style={{ color: "#f87171" }}>*</span>
+          </label>
+          <textarea
+            value={form.description}
+            onChange={e => setForm({ ...form, description: e.target.value })}
+            placeholder="Describe the task in detail..."
+            maxLength={500}
+            rows={4}
+            style={{ ...inputStyle, resize: "vertical", borderColor: errors.description ? "#f87171" : "var(--border)" }}
+            onFocus={e => e.target.style.borderColor = "#7c3aed"}
+            onBlur={e => e.target.style.borderColor = errors.description ? "#f87171" : "var(--border)"}
+          />
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px" }}>
+            {errors.description && <p style={{ margin: 0, fontSize: "12px", color: "#f87171" }}>{errors.description}</p>}
+            <span style={{ marginLeft: "auto", fontSize: "11px", color: "var(--text-muted)" }}>{form.description.length}/500</span>
+          </div>
+        </div>
+
+        {/* Status + Priority */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Status</label>
+            <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}
+              style={inputStyle} onFocus={e => e.target.style.borderColor = "#7c3aed"} onBlur={e => e.target.style.borderColor = "var(--border)"}>
+              <option>Pending</option><option>In Progress</option><option>Completed</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Priority</label>
+            <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}
+              style={inputStyle} onFocus={e => e.target.style.borderColor = "#7c3aed"} onBlur={e => e.target.style.borderColor = "var(--border)"}>
+              <option>Low</option><option>Medium</option><option>High</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Due Date */}
+        <div>
+          <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>
+            Due Date <span style={{ color: "#f87171" }}>*</span>
+          </label>
+          <input type="date" value={form.dueDate} onChange={e => setForm({ ...form, dueDate: e.target.value })}
+            min={getTodayString()}
+            style={{ ...inputStyle, colorScheme: "dark", borderColor: errors.dueDate ? "#f87171" : "var(--border)" }}
+            onFocus={e => e.target.style.borderColor = "#7c3aed"} onBlur={e => e.target.style.borderColor = errors.dueDate ? "#f87171" : "var(--border)"}
+          />
+          {errors.dueDate && <p style={{ margin: "6px 0 0", fontSize: "12px", color: "#f87171" }}>{errors.dueDate}</p>}
+        </div>
+
+        {/* Buttons */}
+        <div style={{ display: "flex", gap: "12px", paddingTop: "8px" }}>
+          <button onClick={() => navigate(-1)} style={{
+            flex: 1, padding: "12px", borderRadius: "10px", fontSize: "14px", fontWeight: 600,
+            background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", cursor: "pointer",
+          }}>Cancel</button>
+          <button onClick={handleSubmit} disabled={loading} style={{
+            flex: 2, padding: "12px", borderRadius: "10px", fontSize: "14px", fontWeight: 700,
+            background: loading ? "var(--border)" : "linear-gradient(135deg, #7c3aed, #4f46e5)",
+            border: "none", color: "white", cursor: loading ? "not-allowed" : "pointer",
+          }}>{loading ? "Saving..." : existing ? "Save Changes" : "Create Task"}</button>
         </div>
       </div>
-
-      {/* Due Date */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Due Date <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="date"
-          name="dueDate"
-          value={form.dueDate ? form.dueDate.split("T")[0] : ""}
-          onChange={handleChange}
-          min={getTodayString()}
-          className={inputClass("dueDate")}
-        />
-        {errors.dueDate && <p className="text-red-500 text-xs mt-1">{errors.dueDate}</p>}
-      </div>
-
-      {/* Buttons */}
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" loading={submitting} className="flex-1">
-          {existing ? "Update Task" : "Create Task"}
-        </Button>
-        <Button type="button" variant="secondary" onClick={() => navigate(-1)} disabled={submitting}>
-          Cancel
-        </Button>
-      </div>
-    </form>
+    </div>
   );
-};
-
-export default TaskForm;
+}
